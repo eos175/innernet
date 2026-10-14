@@ -98,19 +98,26 @@ pub fn run() {
             let toggle_item = MenuItem::with_id(app, "toggle", "Show/Hide innernet", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit innernet", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&toggle_item, &quit_item])?;
+            let icon = app
+                .default_window_icon()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("Default window icon not found"))?;
 
-            let _tray = TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
+            let tray = TrayIconBuilder::with_id("main-tray")
+                .icon(icon)
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .tooltip("innernet")
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "toggle" => {
                         if let Some(window) = app.get_webview_window("main") {
-                            if window.is_visible().unwrap_or(false) {
-                                let _ = window.hide();
+                            let is_visible = window.is_visible().unwrap_or(false);
+                            let is_minimized = window.is_minimized().unwrap_or(false);
+                            if is_visible && !is_minimized {
+                                let _ = window.minimize();
                             } else {
                                 let _ = window.show();
+                                let _ = window.unminimize();
                                 let _ = window.set_focus();
                             }
                         }
@@ -129,10 +136,13 @@ pub fn run() {
                     {
                         let app = tray.app_handle();
                         if let Some(window) = app.get_webview_window("main") {
-                            if window.is_visible().unwrap_or(false) {
-                                let _ = window.hide();
+                            let is_visible = window.is_visible().unwrap_or(false);
+                            let is_minimized = window.is_minimized().unwrap_or(false);
+                            if is_visible && !is_minimized {
+                                let _ = window.minimize();
                             } else {
                                 let _ = window.show();
+                                let _ = window.unminimize();
                                 let _ = window.set_focus();
                             }
                         }
@@ -140,13 +150,15 @@ pub fn run() {
                 })
                 .build(app)?;
 
+            app.manage(tray);
+
             Ok(())
         })
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
-                // Keep the app running in the system tray when closing the window
+                // Minimize to taskbar/dock so user can easily restore window in GNOME/KDE
                 api.prevent_close();
-                let _ = window.hide();
+                let _ = window.minimize();
             }
         })
         .invoke_handler(tauri::generate_handler![
