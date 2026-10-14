@@ -132,6 +132,26 @@ export async function dragWindow(): Promise<void> {
 }
 
 /**
+ * Check if the application is set to start automatically on system boot.
+ */
+export async function isAutostartEnabled(): Promise<boolean> {
+  if (isTauri) {
+    return await invokeCommand<boolean>("is_autostart_enabled");
+  }
+  return false;
+}
+
+/**
+ * Enable or disable automatic launch on system boot.
+ */
+export async function toggleAutostart(enable: boolean): Promise<boolean> {
+  if (isTauri) {
+    return await invokeCommand<boolean>("toggle_autostart", { enable });
+  }
+  return false;
+}
+
+/**
  * Open native system file picker to select and read an invitation .toml file.
  */
 export async function pickInviteFile(): Promise<string | null> {
