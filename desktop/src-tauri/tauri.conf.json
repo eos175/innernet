@@ -14,7 +14,7 @@
       {
         "label": "main",
         "title": "innernet",
-        "width": 380,
+        "width": 400,
         "height": 580,
         "resizable": false,
         "decorations": true,

@@ -111,7 +111,7 @@
   });
 </script>
 
-<main class="w-[380px] h-[580px] flex flex-col bg-slate-900 text-slate-100 border border-slate-800 rounded-lg shadow-2xl overflow-hidden font-sans">
+<main class="w-[400px] h-[580px] flex flex-col bg-slate-900 text-slate-100 border border-slate-800 rounded-lg shadow-2xl overflow-hidden font-sans">
   <Header
     {networks}
     bind:selectedInterface

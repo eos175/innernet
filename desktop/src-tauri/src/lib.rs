@@ -98,10 +98,7 @@ pub fn run() {
             let toggle_item = MenuItem::with_id(app, "toggle", "Show/Hide innernet", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit innernet", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&toggle_item, &quit_item])?;
-            let icon = app
-                .default_window_icon()
-                .cloned()
-                .ok_or_else(|| anyhow::anyhow!("Default window icon not found"))?;
+            let icon = tauri::include_image!("icons/32x32.png");
 
             let tray = TrayIconBuilder::with_id("main-tray")
                 .icon(icon)

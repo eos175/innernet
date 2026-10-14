@@ -10,7 +10,7 @@
 </script>
 
 <div class="p-2.5 border-b border-slate-800 flex items-center gap-2 shrink-0 bg-slate-900">
-  <div class="relative flex-1">
+  <div class="relative flex-1 min-w-0">
     <Search class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5 pointer-events-none" />
     <input
       type="text"
@@ -20,10 +20,10 @@
     />
   </div>
 
-  <div class="flex rounded bg-slate-800 p-0.5 border border-slate-700 text-[11px]">
+  <div class="flex rounded bg-slate-800 p-0.5 border border-slate-700 text-[11px] shrink-0 font-medium">
     <button
       onclick={() => (filterType = "all")}
-      class="px-2 py-1 rounded transition {filterType === 'all'
+      class="px-2.5 py-1 rounded transition whitespace-nowrap {filterType === 'all'
         ? 'bg-slate-700 text-white font-medium'
         : 'text-slate-400 hover:text-slate-200'}"
     >
@@ -31,7 +31,7 @@
     </button>
     <button
       onclick={() => (filterType = "active")}
-      class="px-2 py-1 rounded transition {filterType === 'active'
+      class="px-2.5 py-1 rounded transition whitespace-nowrap {filterType === 'active'
         ? 'bg-slate-700 text-white font-medium'
         : 'text-slate-400 hover:text-slate-200'}"
     >
@@ -39,7 +39,7 @@
     </button>
     <button
       onclick={() => (filterType = "admin")}
-      class="px-2 py-1 rounded transition {filterType === 'admin'
+      class="px-2.5 py-1 rounded transition whitespace-nowrap {filterType === 'admin'
         ? 'bg-slate-700 text-white font-medium'
         : 'text-slate-400 hover:text-slate-200'}"
     >
