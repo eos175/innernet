@@ -94,6 +94,19 @@
     await refreshCurrentNetwork();
   }
 
+  async function handleManualRefresh() {
+    if (!selectedInterface || isRefreshing) return;
+    isRefreshing = true;
+    try {
+      await invokeCommand("fetch_sync", { interface: selectedInterface });
+    } catch (e) {
+      console.warn("Manual fetch_sync error:", e);
+    } finally {
+      isRefreshing = false;
+      await refreshCurrentNetwork();
+    }
+  }
+
   async function refreshCurrentNetwork() {
     if (!selectedInterface || isRefreshing) return;
     isRefreshing = true;
@@ -269,7 +282,7 @@
     {isRefreshing}
     onSelect={handleSelectInterface}
     onOpenImport={() => (showImportModal = true)}
-    onRefresh={refreshCurrentNetwork}
+    onRefresh={handleManualRefresh}
     onHideToTray={hideWindowToTray}
   />
 

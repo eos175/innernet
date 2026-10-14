@@ -43,11 +43,10 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <header
-  data-tauri-drag-region
   onmousedown={handleMouseDown}
   class="p-3 bg-slate-950/80 backdrop-blur border-b border-slate-800/80 flex items-center justify-between shrink-0 select-none cursor-grab active:cursor-grabbing"
 >
-  <div data-tauri-drag-region class="flex items-center gap-2 pointer-events-none">
+  <div class="flex items-center gap-2 pointer-events-none">
     <div class="p-1.5 rounded-md bg-blue-600/20 text-blue-400 border border-blue-500/30">
       <Shield class="w-4 h-4" />
     </div>
@@ -57,7 +56,10 @@
     </div>
   </div>
 
-  <div class="flex items-center gap-1.5 cursor-default">
+  <div
+    class="flex items-center gap-1.5 cursor-default"
+    onmousedown={(e) => e.stopPropagation()}
+  >
     {#if networks.length > 1}
       <div class="relative">
         <select
@@ -74,6 +76,7 @@
     {/if}
 
     <button
+      type="button"
       onclick={onOpenImport}
       title="Add Network Invitation"
       class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 cursor-pointer transition"
@@ -82,6 +85,7 @@
     </button>
 
     <button
+      type="button"
       onclick={onRefresh}
       disabled={isRefreshing}
       title={isRefreshing ? "Refreshing peers..." : "Refresh peers"}
@@ -94,6 +98,7 @@
 
     {#if onHideToTray}
       <button
+        type="button"
         onclick={onHideToTray}
         title="Hide to tray"
         class="p-1.5 rounded bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 border border-slate-700 hover:border-red-500/30 cursor-pointer transition"
