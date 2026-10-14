@@ -144,5 +144,9 @@ async fn dispatch_request(request: DaemonRequest, service: &DaemonService) -> Da
             Ok(iface) => DaemonResponse::Ok(serde_json::json!({ "interface": iface })),
             Err(e) => DaemonResponse::Err(e.to_string()),
         },
+        DaemonRequest::Ping { ip } => match service.ping(ip).await {
+            Ok(ms) => DaemonResponse::Ok(serde_json::json!(ms)),
+            Err(e) => DaemonResponse::Err(e.to_string()),
+        },
     }
 }

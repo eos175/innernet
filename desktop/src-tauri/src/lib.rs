@@ -90,29 +90,16 @@ async fn hide_window(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 async fn ping_peer(ip: String) -> Result<f64, String> {
-    use tokio::process::Command;
-    let output = Command::new("ping")
-        .args(["-c", "1", "-W", "2", &ip])
-        .output()
-        .await
-        .map_err(|e| format!("Failed to execute ping: {}", e))?;
-
-    if !output.status.success() {
-        return Err("Host unreachable or timed out".to_string());
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    if let Some(pos) = stdout.find("time=") {
-        let after = &stdout[pos + 5..];
-        if let Some(end) = after.find(" ms") {
-            let num_str = after[..end].trim();
-            if let Ok(ms) = num_str.parse::<f64>() {
-                return Ok(ms);
-            }
+    let res = send_daemon_request(json!({
+        "action": "ping",
+        "payload": {
+            "ip": ip
         }
-    }
+    }))
+    .await?;
 
-    Err("Could not parse ping latency".to_string())
+    res.as_f64()
+        .ok_or_else(|| "Invalid latency response from daemon".to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

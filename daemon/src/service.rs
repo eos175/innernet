@@ -376,4 +376,31 @@ impl DaemonService {
             }
         });
     }
+
+    /// Send an async ICMP echo request to a peer IP and return round-trip latency in milliseconds.
+    pub async fn ping(&self, target_ip: std::net::IpAddr) -> Result<f64> {
+        let payload = [0; 8];
+        let (_client, mut pinger) = match target_ip {
+            std::net::IpAddr::V4(_) => {
+                let client = surge_ping::Client::new(&surge_ping::Config::default())
+                    .map_err(|e| anyhow!("Failed to initialize IPv4 ICMP client: {}", e))?;
+                let pinger = client.pinger(target_ip, surge_ping::PingIdentifier(111)).await;
+                (client, pinger)
+            }
+            std::net::IpAddr::V6(_) => {
+                let client = surge_ping::Client::new(&surge_ping::Config::builder().kind(surge_ping::ICMP::V6).build())
+                    .map_err(|e| anyhow!("Failed to initialize IPv6 ICMP client: {}", e))?;
+                let pinger = client.pinger(target_ip, surge_ping::PingIdentifier(111)).await;
+                (client, pinger)
+            }
+        };
+
+        pinger.timeout(Duration::from_secs(2));
+        let (_, duration) = pinger
+            .ping(surge_ping::PingSequence(0), &payload)
+            .await
+            .map_err(|e| anyhow!("ICMP ping to {} failed: {}", target_ip, e))?;
+
+        Ok(duration.as_secs_f64() * 1000.0)
+    }
 }

@@ -22,6 +22,8 @@ pub enum DaemonRequest {
         invite_toml: String,
         listen_port: Option<u16>,
     },
+    /// Send an async ICMP echo request to a peer IP and return latency in ms.
+    Ping { ip: IpAddr },
 }
 
 /// Response returned by the daemon for any request.
