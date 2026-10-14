@@ -188,7 +188,6 @@
     onSelect={refreshCurrentNetwork}
     onOpenImport={() => (showImportModal = true)}
     onRefresh={refreshCurrentNetwork}
-    onMinimize={minimizeWindow}
     onHideToTray={hideWindowToTray}
   />
 

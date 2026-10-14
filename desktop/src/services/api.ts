@@ -123,6 +123,15 @@ export async function minimizeWindow(): Promise<void> {
 }
 
 /**
+ * Start dragging the window (reliable on Linux/Wayland/X11).
+ */
+export async function dragWindow(): Promise<void> {
+  if (isTauri) {
+    await invokeCommand("drag_window");
+  }
+}
+
+/**
  * Open native system file picker to select and read an invitation .toml file.
  */
 export async function pickInviteFile(): Promise<string | null> {

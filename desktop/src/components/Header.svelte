@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { Shield, ChevronDown, Plus, RefreshCw, Minus, X } from "@lucide/svelte";
+  import { Shield, ChevronDown, Plus, RefreshCw, X } from "@lucide/svelte";
   import type { NetworkSummary } from "../types";
+  import { dragWindow } from "../services/api";
 
   interface Props {
     networks: NetworkSummary[];
@@ -9,7 +10,6 @@
     onSelect: (iface: string) => void;
     onOpenImport: () => void;
     onRefresh: () => void;
-    onMinimize?: () => void;
     onHideToTray?: () => void;
   }
 
@@ -20,7 +20,6 @@
     onSelect,
     onOpenImport,
     onRefresh,
-    onMinimize,
     onHideToTray,
   }: Props = $props();
 
@@ -29,11 +28,24 @@
     selectedInterface = target.value;
     onSelect(target.value);
   }
+
+  function handleMouseDown(e: MouseEvent) {
+    if (e.button === 0) {
+      const target = e.target as HTMLElement;
+      if (target.closest("button, select, input, a, option")) {
+        return;
+      }
+      dragWindow();
+    }
+  }
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <header
   data-tauri-drag-region
-  class="p-3 bg-slate-950/80 backdrop-blur border-b border-slate-800/80 flex items-center justify-between shrink-0 select-none cursor-default"
+  onmousedown={handleMouseDown}
+  class="p-3 bg-slate-950/80 backdrop-blur border-b border-slate-800/80 flex items-center justify-between shrink-0 select-none cursor-grab active:cursor-grabbing"
 >
   <div data-tauri-drag-region class="flex items-center gap-2 pointer-events-none">
     <div class="p-1.5 rounded-md bg-blue-600/20 text-blue-400 border border-blue-500/30">
@@ -45,7 +57,7 @@
     </div>
   </div>
 
-  <div class="flex items-center gap-1.5">
+  <div class="flex items-center gap-1.5 cursor-default">
     {#if networks.length > 1}
       <div class="relative">
         <select
@@ -64,7 +76,7 @@
     <button
       onclick={onOpenImport}
       title="Add Network Invitation"
-      class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+      class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 cursor-pointer transition"
     >
       <Plus class="w-3.5 h-3.5" />
     </button>
@@ -72,28 +84,18 @@
     <button
       onclick={onRefresh}
       title="Refresh peers"
-      class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+      class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 cursor-pointer transition"
     >
       <RefreshCw class="w-3.5 h-3.5 {isRefreshing ? 'animate-spin text-blue-400' : ''}" />
     </button>
 
     <div class="h-3.5 w-px bg-slate-800 mx-0.5"></div>
 
-    {#if onMinimize}
-      <button
-        onclick={onMinimize}
-        title="Minimize window"
-        class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
-      >
-        <Minus class="w-3.5 h-3.5" />
-      </button>
-    {/if}
-
     {#if onHideToTray}
       <button
         onclick={onHideToTray}
-        title="Close to tray"
-        class="p-1.5 rounded bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 border border-slate-700 hover:border-red-500/30 transition"
+        title="Hide to tray"
+        class="p-1.5 rounded bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 border border-slate-700 hover:border-red-500/30 cursor-pointer transition"
       >
         <X class="w-3.5 h-3.5" />
       </button>
