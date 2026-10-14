@@ -2,6 +2,7 @@
 Description=innernet background management daemon
 After=network-online.target nss-lookup.target
 Wants=network-online.target nss-lookup.target
+Conflicts=innernet@*.service
 
 [Service]
 Type=simple
