@@ -28,12 +28,20 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "category": "Network",
+    "shortDescription": "innernet desktop client",
+    "longDescription": "Desktop client and system tray interface for innernet networks.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "linux": {
+      "rpm": {
+        "depends": ["glibc", "webkit2gtk4.1"]
+      }
+    }
   }
 }
