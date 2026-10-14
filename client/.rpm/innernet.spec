@@ -35,6 +35,8 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %{_bindir}/*
+%attr(0755, root, root) "%{_bindir}/innernetd"
+%attr(0755, root, root) "%{_bindir}/innernet"
 %attr(0644, root, root) "/usr/lib/systemd/system/innernetd.service"
 %attr(0644, root, root) "/usr/lib/systemd/system/innernet@.service"
 %attr(0644, root, root) "/usr/share/man/man8/innernet.8.gz"

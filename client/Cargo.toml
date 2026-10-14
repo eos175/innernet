@@ -70,7 +70,7 @@ buildflags = ["--release"]
 "../../doc/innernet.8.gz" = { path = "/usr/share/man/man8/innernet.8.gz" }
 "../innernet@.service" = { path = "/usr/lib/systemd/system/innernet@.service" }
 "../../daemon/innernetd.service" = { path = "/usr/lib/systemd/system/innernetd.service" }
-"../../target/release/innernetd" = { path = "/usr/bin/innernetd" }
+"../../target/release/innernetd" = { path = "/usr/bin/innernetd", mode = "755" }
 "../../doc/innernet.completions.bash" = { path = "/etc/bash_completion.d/innernet" }
 "../../doc/innernet.completions.fish" = { path = "/usr/share/fish/vendor_completions.d/innernet.fish" }
 "../../doc/innernet.completions.zsh" = { path = "/usr/share/zsh/site-functions/_innernet" }
