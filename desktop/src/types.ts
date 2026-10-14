@@ -21,6 +21,7 @@ export interface InterfaceStatus {
 export interface PeerDetail {
   name: string;
   ip: string;
+  public_key?: string;
   cidr_name?: string;
   is_admin: boolean;
   endpoint?: string;

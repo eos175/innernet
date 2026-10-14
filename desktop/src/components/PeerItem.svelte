@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Check, Copy, Terminal, Activity, ArrowDown, ArrowUp } from "@lucide/svelte";
+  import { Check, Copy, Terminal, Activity, ArrowDown, ArrowUp, Info } from "@lucide/svelte";
   import type { PeerDetail } from "../types";
   import { formatBytes, formatTimeAgo } from "../utils/format";
   import { pingPeer } from "../services/api";
@@ -9,9 +9,10 @@
     copiedIp: string | null;
     currentAddress?: string;
     onCopy: (ip: string) => void;
+    onSelectPeer?: (peer: PeerDetail) => void;
   }
 
-  let { peer, copiedIp, currentAddress, onCopy }: Props = $props();
+  let { peer, copiedIp, currentAddress, onCopy, onSelectPeer }: Props = $props();
 
   let isSelf = $derived(
     peer.is_self ||
@@ -61,9 +62,15 @@
       title={peer.is_connected ? "Online" : "Offline"}
     ></div>
 
-    <div class="min-w-0">
+    <div
+      class="min-w-0 cursor-pointer"
+      onclick={() => onSelectPeer?.(peer)}
+      role="button"
+      tabindex="0"
+      onkeydown={(e) => e.key === 'Enter' && onSelectPeer?.(peer)}
+    >
       <div class="flex items-center gap-1.5 flex-wrap">
-        <span class="text-xs font-medium text-slate-200 truncate">{peer.name}</span>
+        <span class="text-xs font-medium text-slate-200 truncate hover:text-blue-300 transition">{peer.name}</span>
         {#if isSelf}
           <span class="px-1.5 py-0.2 text-[9px] rounded font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
             you
@@ -107,6 +114,14 @@
   </div>
 
   <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition shrink-0">
+    <button
+      onclick={() => onSelectPeer?.(peer)}
+      title="View peer technical details"
+      class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition"
+    >
+      <Info class="w-3.5 h-3.5" />
+    </button>
+
     <button
       onclick={handlePing}
       disabled={isPinging}

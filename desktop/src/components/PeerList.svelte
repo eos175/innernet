@@ -9,9 +9,10 @@
     copiedIp: string | null;
     currentAddress?: string;
     onCopy: (ip: string) => void;
+    onSelectPeer?: (peer: PeerDetail) => void;
   }
 
-  let { peers, searchQuery, isUp, copiedIp, currentAddress, onCopy }: Props = $props();
+  let { peers, searchQuery, isUp, copiedIp, currentAddress, onCopy, onSelectPeer }: Props = $props();
 
   interface CidrGroup {
     name: string;
@@ -60,7 +61,7 @@
 
       <div class="divide-y divide-slate-800/40">
         {#each group.peers as peer (peer.ip)}
-          <PeerItem {peer} {copiedIp} {currentAddress} {onCopy} />
+          <PeerItem {peer} {copiedIp} {currentAddress} {onCopy} {onSelectPeer} />
         {/each}
       </div>
     {/each}

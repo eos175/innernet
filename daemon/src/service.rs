@@ -282,6 +282,7 @@ impl DaemonService {
             result.push(PeerDetail {
                 name: peer.name.to_string(),
                 ip: peer.ip,
+                public_key: Some(peer.public_key.to_string()),
                 cidr_name,
                 is_admin: peer.is_admin,
                 endpoint: peer.endpoint.as_ref().map(|e| e.to_string()),

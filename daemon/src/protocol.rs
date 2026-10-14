@@ -64,6 +64,8 @@ pub struct PeerDetail {
     pub name: String,
     pub ip: IpAddr,
     #[serde(default)]
+    pub public_key: Option<String>,
+    #[serde(default)]
     pub cidr_name: Option<String>,
     pub is_admin: bool,
     pub endpoint: Option<String>,
