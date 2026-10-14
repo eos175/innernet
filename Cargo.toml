@@ -5,11 +5,13 @@ members = [
   "server",
   "client",
   "client-core",
+  "daemon",
   "hostsfile",
   "shared",
   "publicip",
   "netlink-request",
 ]
+exclude = ["desktop/src-tauri"]
 
 [profile.release]
 codegen-units = 1

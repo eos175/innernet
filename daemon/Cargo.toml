@@ -1,0 +1,29 @@
+[package]
+name = "innernet-daemon"
+version = "2.0.0"
+authors = [
+  "Jake McGinty <me@jakebot.org>",
+  "Brian Schwind <brian@tonari.no>",
+  "Ryo Kawaguchi <ryo@tonari.no>",
+  "Matěj Laitl <matej@tonari.no>",
+  "Marek Bernat <marek@tonari.no>",
+]
+description = "A background management daemon for innernet interfaces exposing a local IPC socket."
+edition = "2021"
+license = "MIT"
+readme = "../README.md"
+repository = "https://github.com/tonarino/innernet"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4.3", features = ["derive"] }
+colored.workspace = true
+env_logger = "0.10"
+innernet-client-core = { version = "2.0.0", path = "../client-core" }
+innernet-shared = { version = "2.0.0", path = "../shared" }
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.28", features = ["full"] }
+toml = "0.8"
+wireguard-control = { version = "2.0.0", path = "../wireguard-control" }

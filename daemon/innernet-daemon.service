@@ -1,0 +1,15 @@
+[Unit]
+Description=innernet background management daemon
+After=network-online.target nss-lookup.target
+Wants=network-online.target nss-lookup.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/innernet-daemon --socket-path /var/run/innernet/innernetd.sock
+Restart=always
+RestartSec=5
+RuntimeDirectory=innernet
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target
