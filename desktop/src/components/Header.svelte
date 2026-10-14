@@ -83,8 +83,9 @@
 
     <button
       onclick={onRefresh}
-      title="Refresh peers"
-      class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 cursor-pointer transition"
+      disabled={isRefreshing}
+      title={isRefreshing ? "Refreshing peers..." : "Refresh peers"}
+      class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-slate-300 hover:text-white border border-slate-700 cursor-pointer transition"
     >
       <RefreshCw class="w-3.5 h-3.5 {isRefreshing ? 'animate-spin text-blue-400' : ''}" />
     </button>

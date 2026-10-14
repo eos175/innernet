@@ -66,7 +66,7 @@
   }
 
   async function refreshCurrentNetwork() {
-    if (!selectedInterface) return;
+    if (!selectedInterface || isRefreshing) return;
     isRefreshing = true;
     try {
       const [st, pList] = await Promise.all([

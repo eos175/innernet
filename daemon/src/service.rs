@@ -12,7 +12,7 @@ use std::{
     collections::{HashMap, HashSet},
     ffi::OsStr,
     path::PathBuf,
-    sync::Arc,
+    sync::{Arc, Mutex},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::RwLock;
@@ -27,6 +27,7 @@ pub struct DaemonService {
     hosts_opts: HostsOpts,
     nat_opts: NatOpts,
     active_interfaces: Arc<RwLock<HashSet<String>>>,
+    syncing_interfaces: Arc<Mutex<HashSet<String>>>,
 }
 
 impl DaemonService {
@@ -44,6 +45,7 @@ impl DaemonService {
             hosts_opts,
             nat_opts,
             active_interfaces: Arc::new(RwLock::new(HashSet::new())),
+            syncing_interfaces: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 
@@ -191,6 +193,32 @@ impl DaemonService {
         let iface: InterfaceName = interface_str
             .parse()
             .map_err(|e| anyhow!("Invalid interface name '{}': {}", interface_str, e))?;
+
+        // Guard against duplicate concurrent fetches on the same interface
+        {
+            let mut syncing = self
+                .syncing_interfaces
+                .lock()
+                .map_err(|e| anyhow!("Lock error: {}", e))?;
+            if !syncing.insert(interface_str.to_string()) {
+                log::debug!(
+                    "Sync already in progress for interface '{}', ignoring redundant request",
+                    interface_str
+                );
+                return Ok(());
+            }
+        }
+
+        // RAII guard to ensure the interface is removed from syncing_interfaces on exit
+        struct SyncGuard<'a>(&'a DaemonService, String);
+        impl<'a> Drop for SyncGuard<'a> {
+            fn drop(&mut self) {
+                if let Ok(mut syncing) = self.0.syncing_interfaces.lock() {
+                    syncing.remove(&self.1);
+                }
+            }
+        }
+        let _guard = SyncGuard(self, interface_str.to_string());
 
         let network_opts = self.build_network_opts();
 
@@ -359,17 +387,7 @@ impl DaemonService {
                             continue;
                         }
 
-                        let network_opts = self.build_network_opts();
-
-                        if let Err(e) = fetch(
-                            &self.config_dir,
-                            &self.data_dir,
-                            &network_opts,
-                            &self.hosts_opts,
-                            &self.nat_opts,
-                            &iface_name,
-                            false,
-                        ) {
+                        if let Err(e) = self.fetch_sync(&iface_str) {
                             log::warn!("Background fetch failed for {}: {}", iface_str, e);
                         }
                     }
