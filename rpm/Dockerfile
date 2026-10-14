@@ -19,8 +19,7 @@ RUN source $HOME/.cargo/env && \
 	# device::tests::test_add_peers will fail due to restricted docker env
 	cargo test --release --verbose -- --skip test_add_peers && \
 	cd server && cargo rpm build && \
-	cd ../client && cargo rpm build && \
-	cd ../daemon && cargo rpm build
+	cd ../client && cargo rpm build
 
 # Copy RPMs to a temporary directory for better compatibility
 RUN mkdir -p /target/rpm && \

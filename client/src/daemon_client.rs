@@ -28,7 +28,7 @@ impl DaemonClient {
         unsafe { libc::geteuid() == 0 }
     }
 
-    /// Connect to the running innernet-daemon over Unix domain socket.
+    /// Connect to the running innernetd over Unix domain socket.
     pub fn connect() -> Result<Self> {
         let socket_path = if Path::new(DEFAULT_SOCKET_PATH).exists() {
             DEFAULT_SOCKET_PATH

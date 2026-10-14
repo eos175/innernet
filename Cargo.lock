@@ -812,25 +812,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "innernet-daemon"
-version = "2.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "colored",
- "env_logger 0.10.2",
- "innernet-client-core",
- "innernet-shared",
- "log",
- "serde",
- "serde_json",
- "surge-ping",
- "tokio",
- "toml",
- "wireguard-control",
-]
-
-[[package]]
 name = "innernet-publicip"
 version = "2.0.0"
 
@@ -895,6 +876,25 @@ dependencies = [
  "serde_json",
  "toml",
  "url",
+ "wireguard-control",
+]
+
+[[package]]
+name = "innernetd"
+version = "2.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "colored",
+ "env_logger 0.10.2",
+ "innernet-client-core",
+ "innernet-shared",
+ "log",
+ "serde",
+ "serde_json",
+ "surge-ping",
+ "tokio",
+ "toml",
  "wireguard-control",
 ]
 

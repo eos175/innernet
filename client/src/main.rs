@@ -1319,7 +1319,7 @@ fn run(opts: &Opts) -> Result<(), Error> {
             nat,
         } => {
             if let Ok(mut client) = DaemonClient::connect() {
-                println!("Fetching peer list for network \"{}\" via innernet-daemon...", interface.as_str_lossy().bold());
+                println!("Fetching peer list for network \"{}\" via innernetd...", interface.as_str_lossy().bold());
                 client.fetch(&interface.as_str_lossy())?;
                 println!("{} Network \"{}\" synchronized successfully.", "[*]".green(), interface.as_str_lossy().bold());
             } else if DaemonClient::is_root() {
@@ -1333,9 +1333,9 @@ fn run(opts: &Opts) -> Result<(), Error> {
                     false,
                 )?;
             } else {
-                eprintln!("{}: innernet-daemon is not running at {} and you do not have root privileges.", "Error".red().bold(), daemon_client::DEFAULT_SOCKET_PATH);
+                eprintln!("{}: innernetd is not running at {} and you do not have root privileges.", "Error".red().bold(), daemon_client::DEFAULT_SOCKET_PATH);
                 eprintln!("To fetch peers without sudo, start the daemon:");
-                eprintln!("    sudo systemctl start innernet-daemon");
+                eprintln!("    sudo systemctl start innernetd");
                 eprintln!("Or run this command with root privileges:");
                 eprintln!("    sudo innernet fetch {}", interface);
                 std::process::exit(1);
@@ -1362,13 +1362,13 @@ fn run(opts: &Opts) -> Result<(), Error> {
                 }
 
                 for iface in ifaces {
-                    println!("Bringing up network \"{}\" via innernet-daemon...", iface.bold());
+                    println!("Bringing up network \"{}\" via innernetd...", iface.bold());
                     client.up(&iface)?;
                     println!("{} Network \"{}\" is up and managed by daemon.", "[*]".green(), iface.bold());
                 }
 
                 if daemon {
-                    println!("Note: innernet-daemon is running as a background service and automatically manages sync intervals.");
+                    println!("Note: innernetd is running as a background service and automatically manages sync intervals.");
                 }
             } else if DaemonClient::is_root() {
                 up(
@@ -1379,9 +1379,9 @@ fn run(opts: &Opts) -> Result<(), Error> {
                     &nat,
                 )?;
             } else {
-                eprintln!("{}: innernet-daemon is not running at {} and you do not have root privileges.", "Error".red().bold(), daemon_client::DEFAULT_SOCKET_PATH);
+                eprintln!("{}: innernetd is not running at {} and you do not have root privileges.", "Error".red().bold(), daemon_client::DEFAULT_SOCKET_PATH);
                 eprintln!("To bring up the interface without sudo, start the daemon:");
-                eprintln!("    sudo systemctl start innernet-daemon");
+                eprintln!("    sudo systemctl start innernetd");
                 eprintln!("Or run this command with root privileges:");
                 eprintln!("    sudo innernet up {}", interface.as_ref().map(|i| i.to_string()).unwrap_or_default());
                 std::process::exit(1);
@@ -1389,15 +1389,15 @@ fn run(opts: &Opts) -> Result<(), Error> {
         },
         Command::Down { interface } => {
             if let Ok(mut client) = DaemonClient::connect() {
-                println!("Bringing down network \"{}\" via innernet-daemon...", interface.as_str_lossy().bold());
+                println!("Bringing down network \"{}\" via innernetd...", interface.as_str_lossy().bold());
                 client.down(&interface.as_str_lossy())?;
                 println!("{} Network \"{}\" brought down.", "[*]".green(), interface.as_str_lossy().bold());
             } else if DaemonClient::is_root() {
                 wg::down(&interface, opts.network.backend)?;
             } else {
-                eprintln!("{}: innernet-daemon is not running at {} and you do not have root privileges.", "Error".red().bold(), daemon_client::DEFAULT_SOCKET_PATH);
+                eprintln!("{}: innernetd is not running at {} and you do not have root privileges.", "Error".red().bold(), daemon_client::DEFAULT_SOCKET_PATH);
                 eprintln!("To bring down the interface without sudo, start the daemon:");
-                eprintln!("    sudo systemctl start innernet-daemon");
+                eprintln!("    sudo systemctl start innernetd");
                 eprintln!("Or run this command with root privileges:");
                 eprintln!("    sudo innernet down {}", interface);
                 std::process::exit(1);

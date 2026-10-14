@@ -12,7 +12,7 @@ use tokio::sync::broadcast;
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "innernet-daemon",
+    name = "innernetd",
     author = "Tonari & Contributors",
     version,
     about = "Background daemon for innernet interfaces exposing a local IPC socket."
@@ -51,7 +51,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
     let socket_path = resolve_socket_path(args.socket_path.as_deref());
 
-    log::info!("Starting innernet-daemon version {}", env!("CARGO_PKG_VERSION"));
+    log::info!("Starting innernetd version {}", env!("CARGO_PKG_VERSION"));
     log::info!("Config dir: {}", args.config_dir.display());
     log::info!("Data dir: {}", args.data_dir.display());
 

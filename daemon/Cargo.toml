@@ -1,5 +1,5 @@
 [package]
-name = "innernet-daemon"
+name = "innernetd"
 version = "2.0.0"
 authors = [
   "Jake McGinty <me@jakebot.org>",
@@ -13,6 +13,10 @@ edition = "2021"
 license = "MIT"
 readme = "../README.md"
 repository = "https://github.com/tonarino/innernet"
+
+[[bin]]
+name = "innernetd"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"
@@ -28,15 +32,3 @@ tokio = { version = "1.28", features = ["full"] }
 toml = "0.8"
 wireguard-control = { version = "2.0.0", path = "../wireguard-control" }
 surge-ping = "0.9"
-
-[package.metadata.rpm]
-package = "innernet-daemon"
-
-[package.metadata.rpm.cargo]
-buildflags = ["--release"]
-
-[package.metadata.rpm.files]
-"../innernet-daemon.service" = { path = "/usr/lib/systemd/system/innernet-daemon.service" }
-
-[package.metadata.rpm.targets]
-innernet-daemon = { path = "/usr/bin/innernet-daemon" }

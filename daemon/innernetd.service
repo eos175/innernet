@@ -6,7 +6,7 @@ Conflicts=innernet@*.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/innernet-daemon --socket-path /var/run/innernet/innernetd.sock
+ExecStart=/usr/bin/innernetd --socket-path /var/run/innernet/innernetd.sock
 Restart=always
 RestartSec=5
 RuntimeDirectory=innernet

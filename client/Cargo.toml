@@ -44,6 +44,8 @@ selinux = ["innernet-shared/selinux"]
 [package.metadata.deb]
 assets = [
   ["target/release/innernet", "usr/bin/", "755"],
+  ["../target/release/innernetd", "usr/bin/", "755"],
+  ["../daemon/innernetd.service", "usr/lib/systemd/system/", "644"],
   ["innernet@.service", "usr/lib/systemd/system/", "644"],
   ["../doc/innernet.8.gz", "usr/share/man/man8/", "644"],
   ["../doc/innernet.completions.bash", "etc/bash_completion.d/innernet", "644"],
@@ -52,7 +54,7 @@ assets = [
 ]
 depends = "libc6, libgcc1, systemd"
 recommends = "wireguard"
-extended-description = "innernet client binary for fetching peer information and conducting admin tasks such as adding a new peer."
+extended-description = "innernet client and daemon binary for fetching peer information and conducting admin tasks such as adding a new peer."
 maintainer = "tonari <hey@tonari.no>"
 name = "innernet"
 priority = "optional"
@@ -67,6 +69,8 @@ buildflags = ["--release"]
 [package.metadata.rpm.files]
 "../../doc/innernet.8.gz" = { path = "/usr/share/man/man8/innernet.8.gz" }
 "../innernet@.service" = { path = "/usr/lib/systemd/system/innernet@.service" }
+"../../daemon/innernetd.service" = { path = "/usr/lib/systemd/system/innernetd.service" }
+"../../target/release/innernetd" = { path = "/usr/bin/innernetd" }
 "../../doc/innernet.completions.bash" = { path = "/etc/bash_completion.d/innernet" }
 "../../doc/innernet.completions.fish" = { path = "/usr/share/fish/vendor_completions.d/innernet.fish" }
 "../../doc/innernet.completions.zsh" = { path = "/usr/share/zsh/site-functions/_innernet" }
