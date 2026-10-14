@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { X } from "@lucide/svelte";
+  import { X, FolderOpen } from "@lucide/svelte";
+  import { pickInviteFile } from "../services/api";
 
   interface Props {
     isOpen: boolean;
@@ -12,6 +13,7 @@
   let inviteTomlInput = $state("");
   let importError = $state<string | null>(null);
   let isImporting = $state(false);
+  let fileInputRef = $state<HTMLInputElement | null>(null);
 
   async function handleImport() {
     if (!inviteTomlInput.trim() || isImporting) return;
@@ -25,6 +27,28 @@
       importError = e?.toString() || "Failed to import invitation.";
     } finally {
       isImporting = false;
+    }
+  }
+
+  async function handlePickFile() {
+    importError = null;
+    const content = await pickInviteFile();
+    if (content) {
+      inviteTomlInput = content;
+    } else if (fileInputRef) {
+      fileInputRef.click();
+    }
+  }
+
+  function handleHtmlFileInput(e: Event) {
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        inviteTomlInput = event.target?.result as string || "";
+      };
+      reader.readAsText(file);
     }
   }
 
@@ -51,9 +75,27 @@
         </button>
       </div>
 
-      <p class="text-xs text-slate-400">
-        Paste the contents of your <code class="text-slate-300 bg-slate-800 px-1 py-0.5 rounded">.toml</code> invitation file below:
-      </p>
+      <div class="flex items-center justify-between">
+        <p class="text-xs text-slate-400">
+          Select or paste your <code class="text-slate-300 bg-slate-800 px-1 py-0.5 rounded">.toml</code> invitation:
+        </p>
+
+        <button
+          onclick={handlePickFile}
+          class="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-blue-400 border border-slate-700 transition"
+        >
+          <FolderOpen class="w-3.5 h-3.5" />
+          <span>Select File</span>
+        </button>
+
+        <input
+          type="file"
+          accept=".toml"
+          bind:this={fileInputRef}
+          onchange={handleHtmlFileInput}
+          class="hidden"
+        />
+      </div>
 
       <textarea
         bind:value={inviteTomlInput}

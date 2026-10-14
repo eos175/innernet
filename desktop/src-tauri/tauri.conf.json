@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "innernet",
         "width": 380,
         "height": 580,

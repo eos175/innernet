@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { NetworkSummary, InterfaceStatus, PeerDetail } from "./types";
-  import { invokeCommand } from "./services/api";
+  import { invokeCommand, hideWindowToTray } from "./services/api";
   import Header from "./components/Header.svelte";
   import ConnectionCard from "./components/ConnectionCard.svelte";
   import PeerFilter from "./components/PeerFilter.svelte";
@@ -119,6 +119,7 @@
     onSelect={refreshCurrentNetwork}
     onOpenImport={() => (showImportModal = true)}
     onRefresh={refreshCurrentNetwork}
+    onHideToTray={hideWindowToTray}
   />
 
   <ConnectionCard

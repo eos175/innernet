@@ -99,3 +99,34 @@ export async function invokeCommand<T>(
 
   return {} as T;
 }
+
+/**
+ * Hide the desktop window to system tray.
+ */
+export async function hideWindowToTray(): Promise<void> {
+  if (isTauri) {
+    await invokeCommand("hide_window");
+  }
+}
+
+/**
+ * Open native system file picker to select and read an invitation .toml file.
+ */
+export async function pickInviteFile(): Promise<string | null> {
+  if (isTauri) {
+    try {
+      const { open } = await import("@tauri-apps/plugin-dialog");
+      const selected = await open({
+        multiple: false,
+        filters: [{ name: "Innernet Invitation", extensions: ["toml"] }],
+      });
+      if (selected && typeof selected === "string") {
+        return await invokeCommand<string>("read_invite_file", { path: selected });
+      }
+    } catch (e) {
+      console.error("Failed to open file picker:", e);
+    }
+  }
+  return null;
+}
+

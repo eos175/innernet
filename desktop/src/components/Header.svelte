@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Shield, ChevronDown, Plus, RefreshCw } from "@lucide/svelte";
+  import { Shield, ChevronDown, Plus, RefreshCw, Minus } from "@lucide/svelte";
   import type { NetworkSummary } from "../types";
 
   interface Props {
@@ -9,6 +9,7 @@
     onSelect: (iface: string) => void;
     onOpenImport: () => void;
     onRefresh: () => void;
+    onHideToTray?: () => void;
   }
 
   let {
@@ -18,6 +19,7 @@
     onSelect,
     onOpenImport,
     onRefresh,
+    onHideToTray,
   }: Props = $props();
 
   function handleSelect(e: Event) {
@@ -69,5 +71,15 @@
     >
       <RefreshCw class="w-3.5 h-3.5 {isRefreshing ? 'animate-spin text-blue-400' : ''}" />
     </button>
+
+    {#if onHideToTray}
+      <button
+        onclick={onHideToTray}
+        title="Hide to system tray"
+        class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+      >
+        <Minus class="w-3.5 h-3.5" />
+      </button>
+    {/if}
   </div>
 </header>
