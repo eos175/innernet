@@ -114,6 +114,15 @@ export async function hideWindowToTray(): Promise<void> {
 }
 
 /**
+ * Minimize the desktop window to dock/taskbar.
+ */
+export async function minimizeWindow(): Promise<void> {
+  if (isTauri) {
+    await invokeCommand("minimize_window");
+  }
+}
+
+/**
  * Open native system file picker to select and read an invitation .toml file.
  */
 export async function pickInviteFile(): Promise<string | null> {

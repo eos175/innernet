@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Shield, ChevronDown, Plus, RefreshCw, Minus } from "@lucide/svelte";
+  import { Shield, ChevronDown, Plus, RefreshCw, Minus, X } from "@lucide/svelte";
   import type { NetworkSummary } from "../types";
 
   interface Props {
@@ -9,6 +9,7 @@
     onSelect: (iface: string) => void;
     onOpenImport: () => void;
     onRefresh: () => void;
+    onMinimize?: () => void;
     onHideToTray?: () => void;
   }
 
@@ -19,6 +20,7 @@
     onSelect,
     onOpenImport,
     onRefresh,
+    onMinimize,
     onHideToTray,
   }: Props = $props();
 
@@ -29,8 +31,11 @@
   }
 </script>
 
-<header class="p-3 bg-slate-950/80 backdrop-blur border-b border-slate-800/80 flex items-center justify-between shrink-0">
-  <div class="flex items-center gap-2">
+<header
+  data-tauri-drag-region
+  class="p-3 bg-slate-950/80 backdrop-blur border-b border-slate-800/80 flex items-center justify-between shrink-0 select-none cursor-default"
+>
+  <div data-tauri-drag-region class="flex items-center gap-2 pointer-events-none">
     <div class="p-1.5 rounded-md bg-blue-600/20 text-blue-400 border border-blue-500/30">
       <Shield class="w-4 h-4" />
     </div>
@@ -72,13 +77,25 @@
       <RefreshCw class="w-3.5 h-3.5 {isRefreshing ? 'animate-spin text-blue-400' : ''}" />
     </button>
 
-    {#if onHideToTray}
+    <div class="h-3.5 w-px bg-slate-800 mx-0.5"></div>
+
+    {#if onMinimize}
       <button
-        onclick={onHideToTray}
-        title="Hide to system tray"
+        onclick={onMinimize}
+        title="Minimize window"
         class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
       >
         <Minus class="w-3.5 h-3.5" />
+      </button>
+    {/if}
+
+    {#if onHideToTray}
+      <button
+        onclick={onHideToTray}
+        title="Close to tray"
+        class="p-1.5 rounded bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 border border-slate-700 hover:border-red-500/30 transition"
+      >
+        <X class="w-3.5 h-3.5" />
       </button>
     {/if}
   </div>

@@ -89,6 +89,14 @@ async fn hide_window(app: AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn minimize_window(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.minimize().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 async fn ping_peer(ip: String) -> Result<f64, String> {
     let res = send_daemon_request(json!({
         "action": "ping",
@@ -185,6 +193,7 @@ pub fn run() {
             install_invite,
             read_invite_file,
             hide_window,
+            minimize_window,
             ping_peer
         ])
         .run(tauri::generate_context!())

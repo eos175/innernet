@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { NetworkSummary, InterfaceStatus, PeerDetail, PeerPingState } from "./types";
-  import { invokeCommand, hideWindowToTray, listenTrayToggleConnect, pingPeer } from "./services/api";
+  import { invokeCommand, hideWindowToTray, minimizeWindow, listenTrayToggleConnect, pingPeer } from "./services/api";
   import Header from "./components/Header.svelte";
   import ConnectionCard from "./components/ConnectionCard.svelte";
   import PeerFilter from "./components/PeerFilter.svelte";
@@ -180,7 +180,7 @@
   });
 </script>
 
-<main class="w-full h-screen flex flex-col bg-slate-900 text-slate-100 select-none overflow-hidden font-sans">
+<main class="w-full h-screen flex flex-col bg-slate-900 text-slate-100 select-none overflow-hidden font-sans border border-slate-800/80">
   <Header
     {networks}
     bind:selectedInterface
@@ -188,6 +188,7 @@
     onSelect={refreshCurrentNetwork}
     onOpenImport={() => (showImportModal = true)}
     onRefresh={refreshCurrentNetwork}
+    onMinimize={minimizeWindow}
     onHideToTray={hideWindowToTray}
   />
 
