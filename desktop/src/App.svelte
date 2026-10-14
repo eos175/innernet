@@ -1,7 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { NetworkSummary, InterfaceStatus, PeerDetail, PeerPingState } from "./types";
-  import { invokeCommand, hideWindowToTray, minimizeWindow, listenTrayToggleConnect, pingPeer } from "./services/api";
+  import {
+    invokeCommand,
+    hideWindowToTray,
+    minimizeWindow,
+    listenTrayToggleConnect,
+    pingPeer,
+    updateTrayStatus,
+    sendNotification,
+  } from "./services/api";
   import Header from "./components/Header.svelte";
   import ConnectionCard from "./components/ConnectionCard.svelte";
   import PeerFilter from "./components/PeerFilter.svelte";
@@ -24,6 +32,13 @@
   let activeModalPeer = $state<PeerDetail | null>(null);
   let copiedIp = $state<string | null>(null);
   let showImportModal = $state(false);
+  let rxSpeed = $state(0);
+  let txSpeed = $state(0);
+  let prevRx: number | null = null;
+  let prevTx: number | null = null;
+  let prevTimestamp: number | null = null;
+  let prevIsUp: boolean | null = null;
+  let prevDaemonConnected: boolean | null = null;
 
   // Derived filtered peer list
   let filteredPeers = $derived(
@@ -65,6 +80,20 @@
     }
   }
 
+  function resetBandwidthCounters() {
+    prevRx = null;
+    prevTx = null;
+    prevTimestamp = null;
+    prevIsUp = null;
+    rxSpeed = 0;
+    txSpeed = 0;
+  }
+
+  async function handleSelectInterface() {
+    resetBandwidthCounters();
+    await refreshCurrentNetwork();
+  }
+
   async function refreshCurrentNetwork() {
     if (!selectedInterface || isRefreshing) return;
     isRefreshing = true;
@@ -75,10 +104,63 @@
       ]);
       status = st;
       peers = pList;
+
+      if (prevDaemonConnected === false) {
+        sendNotification("innernet Daemon Restored", "Connection to innernet daemon restored");
+      }
       isDaemonConnected = true;
+      prevDaemonConnected = true;
+
+      if (st) {
+        const now = Date.now();
+        if (st.is_up && prevTimestamp !== null && prevRx !== null && prevTx !== null) {
+          const deltaSec = (now - prevTimestamp) / 1000;
+          if (deltaSec >= 1) {
+            const rxDelta = Math.max(0, st.total_rx_bytes - prevRx);
+            const txDelta = Math.max(0, st.total_tx_bytes - prevTx);
+            rxSpeed = Math.round(rxDelta / deltaSec);
+            txSpeed = Math.round(txDelta / deltaSec);
+            prevRx = st.total_rx_bytes;
+            prevTx = st.total_tx_bytes;
+            prevTimestamp = now;
+          }
+        } else if (st.is_up) {
+          prevRx = st.total_rx_bytes;
+          prevTx = st.total_tx_bytes;
+          prevTimestamp = now;
+          rxSpeed = 0;
+          txSpeed = 0;
+        } else {
+          prevRx = null;
+          prevTx = null;
+          prevTimestamp = null;
+          rxSpeed = 0;
+          txSpeed = 0;
+        }
+
+        // Dynamic tray icon and tooltip
+        updateTrayStatus(st.is_up, selectedInterface, st.address);
+
+        // Connection state notifications
+        if (prevIsUp !== null && prevIsUp !== st.is_up) {
+          if (st.is_up) {
+            sendNotification("innernet Connected", `Connected to ${selectedInterface} (${st.address})`);
+          } else {
+            sendNotification("innernet Disconnected", `Disconnected from ${selectedInterface}`);
+          }
+        }
+        prevIsUp = st.is_up;
+      }
     } catch (e) {
       console.error("Failed to refresh status:", e);
+      if (prevDaemonConnected === true) {
+        sendNotification("innernet Daemon Disconnected", "Lost connection to innernet daemon");
+      }
       isDaemonConnected = false;
+      prevDaemonConnected = false;
+      rxSpeed = 0;
+      txSpeed = 0;
+      updateTrayStatus(false, selectedInterface);
     } finally {
       isRefreshing = false;
     }
@@ -171,7 +253,7 @@
       } else {
         await refreshCurrentNetwork();
       }
-    }, 5000);
+    }, 2500);
 
     return () => {
       clearInterval(interval);
@@ -185,7 +267,7 @@
     {networks}
     bind:selectedInterface
     {isRefreshing}
-    onSelect={refreshCurrentNetwork}
+    onSelect={handleSelectInterface}
     onOpenImport={() => (showImportModal = true)}
     onRefresh={refreshCurrentNetwork}
     onHideToTray={hideWindowToTray}
@@ -211,6 +293,8 @@
     {selectedInterface}
     {isToggling}
     {copiedIp}
+    {rxSpeed}
+    {txSpeed}
     onToggle={handleToggleConnection}
     onCopy={handleCopy}
   />

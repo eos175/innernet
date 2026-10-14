@@ -9,6 +9,7 @@ use tauri::{
     AppHandle, Emitter, Manager, WindowEvent,
 };
 use tauri_plugin_autostart::ManagerExt;
+use tauri_plugin_notification::NotificationExt;
 
 #[tauri::command]
 async fn get_networks() -> Result<serde_json::Value, String> {
@@ -135,12 +136,55 @@ async fn toggle_autostart(app: AppHandle, enable: bool) -> Result<bool, String> 
     autolaunch.is_enabled().map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn update_tray_status(
+    app: AppHandle,
+    is_connected: bool,
+    interface: Option<String>,
+    ip: Option<String>,
+) -> Result<(), String> {
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        let (icon, tooltip) = if is_connected {
+            let iface_str = interface.unwrap_or_else(|| "Connected".to_string());
+            let ip_str = ip.map(|i| format!(" ({})", i)).unwrap_or_default();
+            (
+                tauri::include_image!("icons/32x32.png"),
+                format!("innernet - {}{}", iface_str, ip_str),
+            )
+        } else {
+            (
+                tauri::include_image!("icons/32x32-disconnected.png"),
+                "innernet - Disconnected".to_string(),
+            )
+        };
+
+        tray.set_icon(Some(icon)).map_err(|e| e.to_string())?;
+        tray.set_tooltip(Some(tooltip)).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn send_desktop_notification(
+    app: AppHandle,
+    title: String,
+    body: String,
+) -> Result<(), String> {
+    app.notification()
+        .builder()
+        .title(title)
+        .body(body)
+        .show()
+        .map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--minimized"]),
@@ -250,7 +294,9 @@ pub fn run() {
             drag_window,
             is_autostart_enabled,
             toggle_autostart,
-            ping_peer
+            ping_peer,
+            update_tray_status,
+            send_desktop_notification
         ])
         .run(tauri::generate_context!())
         .expect("error while running innernet desktop application");

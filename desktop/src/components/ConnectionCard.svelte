@@ -1,13 +1,15 @@
 <script lang="ts">
   import { ArrowDown, ArrowUp, Copy, Check } from "@lucide/svelte";
   import type { InterfaceStatus } from "../types";
-  import { formatBytes } from "../utils/format";
+  import { formatBytes, formatSpeed } from "../utils/format";
 
   interface Props {
     status: InterfaceStatus | null;
     selectedInterface: string;
     isToggling: boolean;
     copiedIp: string | null;
+    rxSpeed?: number;
+    txSpeed?: number;
     onToggle: () => void;
     onCopy: (text: string) => void;
   }
@@ -17,6 +19,8 @@
     selectedInterface,
     isToggling,
     copiedIp,
+    rxSpeed = 0,
+    txSpeed = 0,
     onToggle,
     onCopy,
   }: Props = $props();
@@ -83,21 +87,39 @@
       </button>
     </div>
 
-    <!-- Traffic Stats Pill -->
-    <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
-      <div class="flex items-center gap-3">
-        <span class="flex items-center gap-1">
-          <ArrowDown class="w-3 h-3 text-emerald-400" />
-          {formatBytes(status.total_rx_bytes)}
-        </span>
-        <span class="flex items-center gap-1">
-          <ArrowUp class="w-3 h-3 text-blue-400" />
-          {formatBytes(status.total_tx_bytes)}
+    <!-- Traffic Stats & Live Speedometer -->
+    <div class="flex flex-col gap-1.5 px-1 text-[11px] text-slate-400">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="flex items-center gap-1" title="Total downloaded">
+            <ArrowDown class="w-3 h-3 text-emerald-400" />
+            <span>{formatBytes(status.total_rx_bytes)}</span>
+          </span>
+          <span class="flex items-center gap-1" title="Total uploaded">
+            <ArrowUp class="w-3 h-3 text-blue-400" />
+            <span>{formatBytes(status.total_tx_bytes)}</span>
+          </span>
+        </div>
+        <span class="text-slate-400 font-medium">
+          {status.active_peer_count} / {status.peer_count} active
         </span>
       </div>
-      <span class="text-slate-400 font-medium">
-        {status.active_peer_count} / {status.peer_count} active
-      </span>
+
+      <!-- Live Bandwidth Speedometer -->
+      <div class="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[10px] font-mono text-slate-400">
+        <div class="flex items-center gap-2.5">
+          <span class="flex items-center gap-1 text-emerald-300/90" title="Live download rate">
+            <span class="inline-block w-1.5 h-1.5 rounded-full {rxSpeed > 512 ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}"></span>
+            <span>Rate &darr; {formatSpeed(rxSpeed)}</span>
+          </span>
+          <span class="text-slate-700">|</span>
+          <span class="flex items-center gap-1 text-blue-300/90" title="Live upload rate">
+            <span class="inline-block w-1.5 h-1.5 rounded-full {txSpeed > 512 ? 'bg-blue-400 animate-pulse' : 'bg-slate-600'}"></span>
+            <span>&uarr; {formatSpeed(txSpeed)}</span>
+          </span>
+        </div>
+        <span class="text-slate-500 text-[10px] uppercase font-sans tracking-wider">Live</span>
+      </div>
     </div>
   {/if}
 </section>

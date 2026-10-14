@@ -193,3 +193,34 @@ export async function listenTrayToggleConnect(callback: () => void): Promise<() 
   return () => {};
 }
 
+/**
+ * Update system tray icon and tooltip status.
+ */
+export async function updateTrayStatus(
+  isConnected: boolean,
+  iface?: string,
+  ip?: string
+): Promise<void> {
+  if (isTauri) {
+    await invokeCommand("update_tray_status", {
+      isConnected,
+      interface: iface || null,
+      ip: ip || null,
+    });
+  }
+}
+
+/**
+ * Dispatch a native desktop notification.
+ */
+export async function sendNotification(
+  title: string,
+  body: string
+): Promise<void> {
+  if (isTauri) {
+    await invokeCommand("send_desktop_notification", { title, body });
+  } else {
+    console.log(`[Notification] ${title}: ${body}`);
+  }
+}
+

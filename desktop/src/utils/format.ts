@@ -16,3 +16,12 @@ export function formatTimeAgo(epochSeconds?: number): string {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return `${Math.floor(diff / 86400)}d ago`;
 }
+
+export function formatSpeed(bytesPerSec: number): string {
+  if (bytesPerSec <= 0 || isNaN(bytesPerSec)) return "0 B/s";
+  const k = 1024;
+  const sizes = ["B/s", "KB/s", "MB/s", "GB/s", "TB/s"];
+  const i = Math.floor(Math.log(bytesPerSec) / Math.log(k));
+  const idx = Math.min(Math.max(i, 0), sizes.length - 1);
+  return parseFloat((bytesPerSec / Math.pow(k, idx)).toFixed(1)) + " " + sizes[idx];
+}
