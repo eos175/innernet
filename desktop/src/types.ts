@@ -21,6 +21,7 @@ export interface InterfaceStatus {
 export interface PeerDetail {
   name: string;
   ip: string;
+  cidr_name?: string;
   is_admin: boolean;
   endpoint?: string;
   last_handshake_time?: number;

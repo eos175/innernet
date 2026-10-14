@@ -240,6 +240,12 @@ impl DaemonService {
                 HashMap::new()
             };
 
+        let cidr_map: HashMap<i64, String> = store
+            .cidrs()
+            .iter()
+            .map(|c| (c.id, c.name.to_string()))
+            .collect();
+
         let now = SystemTime::now();
         let active_threshold = Duration::from_secs(180);
         let mut result = Vec::new();
@@ -271,9 +277,12 @@ impl DaemonService {
                 (None, false, 0, 0)
             };
 
+            let cidr_name = cidr_map.get(&peer.cidr_id).cloned();
+
             result.push(PeerDetail {
                 name: peer.name.to_string(),
                 ip: peer.ip,
+                cidr_name,
                 is_admin: peer.is_admin,
                 endpoint: peer.endpoint.as_ref().map(|e| e.to_string()),
                 last_handshake_time,
@@ -284,7 +293,7 @@ impl DaemonService {
             });
         }
 
-        result.sort_by(|a, b| b.is_self.cmp(&a.is_self).then_with(|| a.name.cmp(&b.name)));
+        result.sort_by_key(|p| p.ip);
         Ok(result)
     }
 

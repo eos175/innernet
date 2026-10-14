@@ -61,6 +61,8 @@ pub struct InterfaceStatus {
 pub struct PeerDetail {
     pub name: String,
     pub ip: IpAddr,
+    #[serde(default)]
+    pub cidr_name: Option<String>,
     pub is_admin: bool,
     pub endpoint: Option<String>,
     pub last_handshake_time: Option<u64>,
