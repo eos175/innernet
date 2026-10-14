@@ -28,7 +28,10 @@ use std::{
 use util::{human_duration, human_size};
 use wireguard_control::{Device, InterfaceName, PeerInfo};
 
+mod daemon_client;
 mod util;
+
+use daemon_client::DaemonClient;
 
 struct PeerState<'a> {
     peer: &'a Peer,
@@ -905,7 +908,155 @@ fn get_server_capabilities(config: &InterfaceConfig) -> Result<ServerCapabilitie
     }
 }
 
+fn show_from_daemon(
+    client: &mut DaemonClient,
+    short: bool,
+    tree: bool,
+    interface: Option<Interface>,
+) -> Result<(), Error> {
+    let networks = client.list_networks()?;
+    let targets: Vec<String> = match interface {
+        Some(iface) => vec![iface.to_string()],
+        None => networks.into_iter().map(|n| n.interface).collect(),
+    };
+
+    if targets.is_empty() {
+        log::info!("No innernet networks currently running.");
+        return Ok(());
+    }
+
+    for iface in targets {
+        let status = match client.get_status(&iface) {
+            Ok(s) => s,
+            Err(e) => {
+                log::warn!("Could not fetch status for network {}: {}", iface.yellow(), e);
+                continue;
+            }
+        };
+
+        let mut peers = match client.get_peers(&iface) {
+            Ok(p) => p,
+            Err(e) => {
+                log::warn!("Could not fetch peers for network {}: {}", iface.yellow(), e);
+                continue;
+            }
+        };
+
+        peers.sort_by_key(|p| p.ip);
+
+        if short {
+            let listen_port_str = status
+                .listen_port
+                .map(|p| format!("(:{p}) "))
+                .unwrap_or_default();
+            println!(
+                "{} {}",
+                status.interface.green().bold(),
+                listen_port_str.dimmed(),
+            );
+        } else {
+            println!(
+                "{}: {}",
+                "network".green().bold(),
+                status.interface.green(),
+            );
+            if let Some(listen_port) = status.listen_port {
+                println!("  {}: {}", "listening port".bold(), listen_port);
+            }
+        }
+
+        if tree {
+            let mut groups = std::collections::BTreeMap::new();
+            for peer in &peers {
+                let cidr = peer.cidr_name.as_deref().unwrap_or("other");
+                groups.entry(cidr).or_insert_with(Vec::new).push(peer);
+            }
+
+            for (cidr_name, group_peers) in groups {
+                println_pad!(2, "{}", cidr_name.blue().bold());
+                for peer in group_peers {
+                    let connected = peer.is_connected || peer.is_self;
+                    let pubkey_short = peer
+                        .public_key
+                        .as_deref()
+                        .map(|k| if k.len() > 10 { &k[..10] } else { k })
+                        .unwrap_or("-");
+                    println_pad!(
+                        4,
+                        "| {} {}: {} ({}{})",
+                        if connected { "◉".bold() } else { "◯".dimmed() },
+                        peer.ip.to_string().yellow().bold(),
+                        peer.name.yellow(),
+                        if peer.is_self { "you, " } else { "" },
+                        format!("{}…", pubkey_short).dimmed()
+                    );
+                }
+            }
+        } else {
+            for peer in &peers {
+                let connected = peer.is_connected || peer.is_self;
+                let pubkey_short = peer
+                    .public_key
+                    .as_deref()
+                    .map(|k| if k.len() > 10 { &k[..10] } else { k })
+                    .unwrap_or("-");
+
+                if short {
+                    println_pad!(
+                        2,
+                        "| {} {}: {} ({}{})",
+                        if connected { "◉".bold() } else { "◯".dimmed() },
+                        peer.ip.to_string().yellow().bold(),
+                        peer.name.yellow(),
+                        if peer.is_self { "you, " } else { "" },
+                        format!("{}…", pubkey_short).dimmed()
+                    );
+                } else {
+                    println_pad!(
+                        2,
+                        "{}: {} ({})",
+                        "peer".yellow().bold(),
+                        peer.name.yellow(),
+                        format!("{}…", pubkey_short).yellow()
+                    );
+                    println_pad!(2, "  {}: {}", "ip".bold(), peer.ip);
+                    if let Some(ref endpoint) = peer.endpoint {
+                        println_pad!(2, "  {}: {}", "endpoint".bold(), endpoint);
+                    }
+                    if let Some(hs) = peer.last_handshake_time {
+                        let now = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_secs();
+                        if now >= hs {
+                            let diff = Duration::from_secs(now - hs);
+                            println_pad!(2, "  {}: {}", "latest handshake".bold(), human_duration(diff));
+                        }
+                    }
+                    if peer.rx_bytes > 0 || peer.tx_bytes > 0 {
+                        println_pad!(
+                            2,
+                            "  {}: {} received, {} sent",
+                            "transfer".bold(),
+                            human_size(peer.rx_bytes),
+                            human_size(peer.tx_bytes)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
 fn show(opts: &Opts, short: bool, tree: bool, interface: Option<Interface>) -> Result<(), Error> {
+    if !DaemonClient::is_root() {
+        if let Ok(mut client) = DaemonClient::connect() {
+            return show_from_daemon(&mut client, short, tree, interface);
+        }
+    }
+
     let interfaces = interface.map_or_else(
         || Device::list(opts.network.backend),
         |interface| Ok(vec![*interface]),
@@ -1167,15 +1318,28 @@ fn run(opts: &Opts) -> Result<(), Error> {
             hosts,
             nat,
         } => {
-            fetch(
-                &opts.config_dir,
-                &opts.data_dir,
-                &opts.network,
-                &hosts,
-                &nat,
-                &interface,
-                false,
-            )?;
+            if let Ok(mut client) = DaemonClient::connect() {
+                println!("Fetching peer list for network \"{}\" via innernet-daemon...", interface.as_str_lossy().bold());
+                client.fetch(&interface.as_str_lossy())?;
+                println!("{} Network \"{}\" synchronized successfully.", "[*]".green(), interface.as_str_lossy().bold());
+            } else if DaemonClient::is_root() {
+                fetch(
+                    &opts.config_dir,
+                    &opts.data_dir,
+                    &opts.network,
+                    &hosts,
+                    &nat,
+                    &interface,
+                    false,
+                )?;
+            } else {
+                eprintln!("{}: innernet-daemon is not running at {} and you do not have root privileges.", "Error".red().bold(), daemon_client::DEFAULT_SOCKET_PATH);
+                eprintln!("To fetch peers without sudo, start the daemon:");
+                eprintln!("    sudo systemctl start innernet-daemon");
+                eprintln!("Or run this command with root privileges:");
+                eprintln!("    sudo innernet fetch {}", interface);
+                std::process::exit(1);
+            }
         },
         Command::Up {
             interface,
@@ -1183,14 +1347,62 @@ fn run(opts: &Opts) -> Result<(), Error> {
             hosts,
             nat,
             interval,
-        } => up(
-            interface,
-            opts,
-            daemon.then(|| Duration::from_secs(interval)),
-            hosts,
-            &nat,
-        )?,
-        Command::Down { interface } => wg::down(&interface, opts.network.backend)?,
+        } => {
+            if let Ok(mut client) = DaemonClient::connect() {
+                let ifaces = match &interface {
+                    Some(iface) => vec![iface.to_string()],
+                    None => {
+                        let nets = client.list_networks().unwrap_or_default();
+                        nets.into_iter().map(|n| n.interface).collect()
+                    }
+                };
+
+                if ifaces.is_empty() {
+                    bail!("No installed innernet networks found to bring up.");
+                }
+
+                for iface in ifaces {
+                    println!("Bringing up network \"{}\" via innernet-daemon...", iface.bold());
+                    client.up(&iface)?;
+                    println!("{} Network \"{}\" is up and managed by daemon.", "[*]".green(), iface.bold());
+                }
+
+                if daemon {
+                    println!("Note: innernet-daemon is running as a background service and automatically manages sync intervals.");
+                }
+            } else if DaemonClient::is_root() {
+                up(
+                    interface,
+                    opts,
+                    daemon.then(|| Duration::from_secs(interval)),
+                    hosts,
+                    &nat,
+                )?;
+            } else {
+                eprintln!("{}: innernet-daemon is not running at {} and you do not have root privileges.", "Error".red().bold(), daemon_client::DEFAULT_SOCKET_PATH);
+                eprintln!("To bring up the interface without sudo, start the daemon:");
+                eprintln!("    sudo systemctl start innernet-daemon");
+                eprintln!("Or run this command with root privileges:");
+                eprintln!("    sudo innernet up {}", interface.as_ref().map(|i| i.to_string()).unwrap_or_default());
+                std::process::exit(1);
+            }
+        },
+        Command::Down { interface } => {
+            if let Ok(mut client) = DaemonClient::connect() {
+                println!("Bringing down network \"{}\" via innernet-daemon...", interface.as_str_lossy().bold());
+                client.down(&interface.as_str_lossy())?;
+                println!("{} Network \"{}\" brought down.", "[*]".green(), interface.as_str_lossy().bold());
+            } else if DaemonClient::is_root() {
+                wg::down(&interface, opts.network.backend)?;
+            } else {
+                eprintln!("{}: innernet-daemon is not running at {} and you do not have root privileges.", "Error".red().bold(), daemon_client::DEFAULT_SOCKET_PATH);
+                eprintln!("To bring down the interface without sudo, start the daemon:");
+                eprintln!("    sudo systemctl start innernet-daemon");
+                eprintln!("Or run this command with root privileges:");
+                eprintln!("    sudo innernet down {}", interface);
+                std::process::exit(1);
+            }
+        },
         Command::Uninstall { interface, yes } => uninstall(&interface, opts, yes)?,
         Command::AddPeer {
             interface,
