@@ -34,6 +34,10 @@ struct Args {
     #[clap(long, default_value = "60")]
     interval: u64,
 
+    /// Automatically bring up all configured networks on startup.
+    #[clap(long, default_value_t = true, action = clap::ArgAction::Set)]
+    auto_up: bool,
+
     #[clap(flatten)]
     network: NetworkOpts,
 
@@ -62,6 +66,14 @@ async fn main() -> Result<()> {
         args.hosts,
         args.nat,
     ));
+
+    // Automatically bring up configured networks on startup
+    if args.auto_up {
+        let service_auto_up = service.clone();
+        tokio::spawn(async move {
+            service_auto_up.auto_up_all().await;
+        });
+    }
 
     // Start background sync task
     service

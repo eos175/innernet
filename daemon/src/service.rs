@@ -188,6 +188,27 @@ impl DaemonService {
         Ok(())
     }
 
+    /// Automatically bring up all configured networks found in config_dir.
+    pub async fn auto_up_all(&self) {
+        match self.list_networks() {
+            Ok(networks) => {
+                for net in networks {
+                    log::info!("Auto-starting innernet interface '{}'...", net.interface);
+                    if let Err(e) = self.up(&net.interface).await {
+                        log::warn!(
+                            "Failed to auto-start interface '{}': {}. It can still be started manually.",
+                            net.interface,
+                            e
+                        );
+                    }
+                }
+            }
+            Err(e) => {
+                log::warn!("Failed to read network configurations for auto-up: {}", e);
+            }
+        }
+    }
+
     /// Force a peer and route synchronization from the coordination server.
     pub fn fetch_sync(&self, interface_str: &str) -> Result<()> {
         let iface: InterfaceName = interface_str
