@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "innernet",
+  "productName": "innernet-desktop",
   "version": "2.0.0",
   "identifier": "no.tonari.innernet.desktop",
   "build": {
@@ -28,7 +28,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "category": "Network",
+    "category": "Utilities",
     "shortDescription": "innernet desktop client",
     "longDescription": "Desktop client and system tray interface for innernet networks.",
     "icon": [
