@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Check, Copy, Terminal, Activity, ArrowDown, ArrowUp, Info } from "@lucide/svelte";
-  import type { PeerDetail } from "../types";
+  import type { PeerDetail, PeerPingState } from "../types";
   import { formatBytes, formatTimeAgo } from "../utils/format";
   import { pingPeer } from "../services/api";
 
@@ -8,34 +8,44 @@
     peer: PeerDetail;
     copiedIp: string | null;
     currentAddress?: string;
+    pingState?: PeerPingState;
     onCopy: (ip: string) => void;
     onSelectPeer?: (peer: PeerDetail) => void;
+    onPing?: (ip: string) => void;
   }
 
-  let { peer, copiedIp, currentAddress, onCopy, onSelectPeer }: Props = $props();
+  let { peer, copiedIp, currentAddress, pingState, onCopy, onSelectPeer, onPing }: Props = $props();
 
   let isSelf = $derived(
     peer.is_self ||
       Boolean(currentAddress && (peer.ip === currentAddress || currentAddress.startsWith(peer.ip)))
   );
 
-  let isPinging = $state(false);
-  let pingLatency = $state<number | null>(null);
-  let pingFailed = $state(false);
+  let localIsPinging = $state(false);
+  let localPingLatency = $state<number | null>(null);
+  let localPingFailed = $state(false);
   let copiedSsh = $state(false);
+
+  let isPinging = $derived(pingState ? pingState.isPinging : localIsPinging);
+  let pingLatency = $derived(pingState ? pingState.latency : localPingLatency);
+  let pingFailed = $derived(pingState ? pingState.failed : localPingFailed);
 
   async function handlePing() {
     if (isPinging) return;
-    isPinging = true;
-    pingFailed = false;
+    if (onPing) {
+      onPing(peer.ip);
+      return;
+    }
+    localIsPinging = true;
+    localPingFailed = false;
     try {
       const ms = await pingPeer(peer.ip);
-      pingLatency = Math.round(ms);
+      localPingLatency = Math.round(ms);
     } catch {
-      pingFailed = true;
-      pingLatency = null;
+      localPingFailed = true;
+      localPingLatency = null;
     } finally {
-      isPinging = false;
+      localIsPinging = false;
     }
   }
 
@@ -55,12 +65,17 @@
 
 <div class="p-2.5 px-3 hover:bg-slate-800/40 transition flex items-center justify-between group">
   <div class="flex items-center gap-2.5 min-w-0">
-    <div
-      class="w-2 h-2 rounded-full shrink-0 {peer.is_connected
-        ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
-        : 'bg-slate-600'}"
-      title={peer.is_connected ? "Online" : "Offline"}
-    ></div>
+    <div class="relative flex items-center justify-center w-2 h-2 shrink-0">
+      {#if peer.is_connected}
+        <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75"></span>
+      {/if}
+      <div
+        class="relative w-2 h-2 rounded-full {peer.is_connected
+          ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
+          : 'bg-slate-600'}"
+        title={peer.is_connected ? "Online" : "Offline"}
+      ></div>
+    </div>
 
     <div
       class="min-w-0 cursor-pointer"
@@ -82,7 +97,12 @@
           </span>
         {/if}
 
-        {#if pingLatency !== null}
+        {#if isPinging}
+          <span class="px-1.5 py-0.2 text-[9px] rounded font-mono font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+            pinging...
+          </span>
+        {:else if pingLatency !== null && pingLatency !== undefined}
           <span class="px-1 py-0.2 text-[9px] rounded font-mono font-medium {pingLatency < 50 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
             {pingLatency}ms
           </span>
@@ -126,8 +146,11 @@
       onclick={handlePing}
       disabled={isPinging}
       title="Ping peer latency"
-      class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition disabled:opacity-50"
+      class="relative p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition disabled:opacity-50"
     >
+      {#if isPinging}
+        <span class="animate-ping absolute inset-0 rounded bg-amber-400/30 pointer-events-none"></span>
+      {/if}
       <Activity class="w-3.5 h-3.5 {isPinging ? 'animate-pulse text-amber-400' : ''}" />
     </button>
 

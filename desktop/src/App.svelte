@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { NetworkSummary, InterfaceStatus, PeerDetail } from "./types";
+  import type { NetworkSummary, InterfaceStatus, PeerDetail, PeerPingState } from "./types";
   import { invokeCommand, hideWindowToTray, listenTrayToggleConnect, pingPeer } from "./services/api";
   import Header from "./components/Header.svelte";
   import ConnectionCard from "./components/ConnectionCard.svelte";
@@ -20,6 +20,7 @@
   let isRefreshing = $state(false);
   let isDaemonConnected = $state(true);
   let isPingingAll = $state(false);
+  let pingStates = $state<Record<string, PeerPingState>>({});
   let activeModalPeer = $state<PeerDetail | null>(null);
   let copiedIp = $state<string | null>(null);
   let showImportModal = $state(false);
@@ -121,12 +122,33 @@
     await refreshCurrentNetwork();
   }
 
+  function isSelfPeer(peer: PeerDetail): boolean {
+    return Boolean(
+      peer.is_self ||
+        (status?.address && (peer.ip === status.address || status.address.startsWith(peer.ip)))
+    );
+  }
+
+  async function handlePingPeer(ip: string) {
+    pingStates[ip] = {
+      latency: pingStates[ip]?.latency ?? null,
+      isPinging: true,
+      failed: false,
+    };
+    try {
+      const ms = await pingPeer(ip);
+      pingStates[ip] = { latency: Math.round(ms), isPinging: false, failed: false };
+    } catch {
+      pingStates[ip] = { latency: null, isPinging: false, failed: true };
+    }
+  }
+
   async function handlePingAll() {
     if (isPingingAll || peers.length === 0) return;
     isPingingAll = true;
     try {
-      const activePeers = peers.filter((p) => !p.is_self && p.is_connected);
-      await Promise.allSettled(activePeers.map((p) => pingPeer(p.ip)));
+      const targetPeers = peers.filter((p) => !isSelfPeer(p));
+      await Promise.allSettled(targetPeers.map((p) => handlePingPeer(p.ip)));
     } catch (e) {
       console.error("Failed to ping all:", e);
     } finally {
@@ -207,8 +229,10 @@
       isUp={status?.is_up ?? false}
       {copiedIp}
       currentAddress={status?.address}
+      {pingStates}
       onCopy={handleCopy}
       onSelectPeer={(p) => (activeModalPeer = p)}
+      onPing={handlePingPeer}
     />
   </section>
 
@@ -221,6 +245,8 @@
   <PeerDetailModal
     peer={activeModalPeer}
     currentAddress={status?.address}
+    pingState={activeModalPeer ? pingStates[activeModalPeer.ip] : undefined}
     onClose={() => (activeModalPeer = null)}
+    onPing={handlePingPeer}
   />
 </main>

@@ -26,9 +26,12 @@
     <button
       onclick={onPingAll}
       disabled={isPingingAll}
-      title="Diagnose / Ping all active peers"
-      class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-white transition shrink-0 disabled:opacity-50"
+      title="Diagnose / Ping all peers"
+      class="relative p-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-white transition shrink-0 disabled:opacity-50 overflow-hidden"
     >
+      {#if isPingingAll}
+        <span class="animate-ping absolute inset-0 rounded bg-blue-500/30 pointer-events-none"></span>
+      {/if}
       <Activity class="w-3.5 h-3.5 {isPingingAll ? 'animate-pulse text-amber-400' : ''}" />
     </button>
   {/if}

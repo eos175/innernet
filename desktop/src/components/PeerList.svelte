@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PeerDetail } from "../types";
+  import type { PeerDetail, PeerPingState } from "../types";
   import PeerItem from "./PeerItem.svelte";
 
   interface Props {
@@ -8,11 +8,13 @@
     isUp: boolean;
     copiedIp: string | null;
     currentAddress?: string;
+    pingStates?: Record<string, PeerPingState>;
     onCopy: (ip: string) => void;
     onSelectPeer?: (peer: PeerDetail) => void;
+    onPing?: (ip: string) => void;
   }
 
-  let { peers, searchQuery, isUp, copiedIp, currentAddress, onCopy, onSelectPeer }: Props = $props();
+  let { peers, searchQuery, isUp, copiedIp, currentAddress, pingStates, onCopy, onSelectPeer, onPing }: Props = $props();
 
   interface CidrGroup {
     name: string;
@@ -61,7 +63,15 @@
 
       <div class="divide-y divide-slate-800/40">
         {#each group.peers as peer (peer.ip)}
-          <PeerItem {peer} {copiedIp} {currentAddress} {onCopy} {onSelectPeer} />
+          <PeerItem
+            {peer}
+            {copiedIp}
+            {currentAddress}
+            pingState={pingStates?.[peer.ip]}
+            {onCopy}
+            {onSelectPeer}
+            {onPing}
+          />
         {/each}
       </div>
     {/each}

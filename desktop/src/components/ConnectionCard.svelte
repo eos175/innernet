@@ -25,9 +25,12 @@
 <section class="p-3.5 bg-slate-950/40 border-b border-slate-800 flex flex-col gap-3 shrink-0">
   <div class="flex items-center justify-between">
     <div class="flex items-center gap-2.5">
-      <div class="relative">
+      <div class="relative flex items-center justify-center">
+        {#if status?.is_up}
+          <span class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-emerald-400 opacity-75"></span>
+        {/if}
         <div
-          class="w-3 h-3 rounded-full {status?.is_up
+          class="relative w-3 h-3 rounded-full {status?.is_up
             ? 'bg-emerald-500 ring-4 ring-emerald-500/20'
             : 'bg-slate-600'}"
         ></div>

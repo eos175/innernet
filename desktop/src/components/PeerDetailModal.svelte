@@ -1,16 +1,18 @@
 <script lang="ts">
   import { X, Check, Copy, Terminal, Activity, ArrowDown, ArrowUp, Key, Globe, Clock, Shield } from "@lucide/svelte";
-  import type { PeerDetail } from "../types";
+  import type { PeerDetail, PeerPingState } from "../types";
   import { formatBytes, formatTimeAgo } from "../utils/format";
   import { pingPeer } from "../services/api";
 
   interface Props {
     peer: PeerDetail | null;
     currentAddress?: string;
+    pingState?: PeerPingState;
     onClose: () => void;
+    onPing?: (ip: string) => void;
   }
 
-  let { peer, currentAddress, onClose }: Props = $props();
+  let { peer, currentAddress, pingState, onClose, onPing }: Props = $props();
 
   let isSelf = $derived(
     peer?.is_self ||
@@ -18,9 +20,13 @@
   );
 
   let copiedField = $state<string | null>(null);
-  let isPinging = $state(false);
-  let pingLatency = $state<number | null>(null);
-  let pingFailed = $state(false);
+  let localIsPinging = $state(false);
+  let localPingLatency = $state<number | null>(null);
+  let localPingFailed = $state(false);
+
+  let isPinging = $derived(pingState ? pingState.isPinging : localIsPinging);
+  let pingLatency = $derived(pingState ? pingState.latency : localPingLatency);
+  let pingFailed = $derived(pingState ? pingState.failed : localPingFailed);
 
   function copyText(text: string, field: string) {
     navigator.clipboard.writeText(text);
@@ -32,16 +38,20 @@
 
   async function handlePing() {
     if (!peer || isPinging) return;
-    isPinging = true;
-    pingFailed = false;
+    if (onPing) {
+      onPing(peer.ip);
+      return;
+    }
+    localIsPinging = true;
+    localPingFailed = false;
     try {
       const ms = await pingPeer(peer.ip);
-      pingLatency = Math.round(ms);
+      localPingLatency = Math.round(ms);
     } catch {
-      pingFailed = true;
-      pingLatency = null;
+      localPingFailed = true;
+      localPingLatency = null;
     } finally {
-      isPinging = false;
+      localIsPinging = false;
     }
   }
 </script>
@@ -52,11 +62,16 @@
       <!-- Header -->
       <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
         <div class="flex items-center gap-2 min-w-0">
-          <div
-            class="w-2.5 h-2.5 rounded-full shrink-0 {peer.is_connected
-              ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
-              : 'bg-slate-600'}"
-          ></div>
+          <div class="relative flex items-center justify-center w-2.5 h-2.5 shrink-0">
+            {#if peer.is_connected}
+              <span class="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 opacity-75"></span>
+            {/if}
+            <div
+              class="relative w-2.5 h-2.5 rounded-full {peer.is_connected
+                ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
+                : 'bg-slate-600'}"
+            ></div>
+          </div>
           <h2 class="text-sm font-semibold text-white truncate">{peer.name}</h2>
           {#if isSelf}
             <span class="px-1.5 py-0.2 text-[9px] rounded font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">

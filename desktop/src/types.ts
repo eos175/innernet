@@ -31,3 +31,9 @@ export interface PeerDetail {
   is_connected: boolean;
   is_self?: boolean;
 }
+
+export interface PeerPingState {
+  latency: number | null;
+  isPinging: boolean;
+  failed: boolean;
+}
