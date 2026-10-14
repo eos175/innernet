@@ -57,19 +57,34 @@ sudo innernet install /path/to/invitation.toml
 
 You can customize the network name if you want to, or leave it at the default. `innernet` will then connect to the `innernet` server via WireGuard, generate a new key pair, and register that pair with the server. The private key in the invitation file can no longer be used.
 
-If everything was successful, the new peer is on the network. You can run things like
+If everything was successful, the new peer is on the network.
+
+### Background Service (`innernetd`) & Non-Root Usage
+
+On Linux, `innernet` includes a lightweight background management daemon, `innernetd`. You can enable and start it with:
 
 ```sh
-sudo innernet list
+sudo systemctl enable --now innernetd
 ```
 
-or
+When `innernetd` is running, ordinary network commands **no longer require `sudo`** or root privileges:
 
 ```sh
-sudo innernet list --tree
+# View current network and peers
+innernet list
+
+# View network grouped by CIDR hierarchy
+innernet list --tree
+
+# Bring up or down an interface
+innernet up <interface>
+innernet down <interface>
+
+# Trigger immediate peer synchronization
+innernet fetch <interface>
 ```
 
-to view the current network and all CIDRs visible to this peer.
+If `innernetd` is not active, `innernet` automatically falls back to standalone execution (requiring `sudo`). See [`doc/daemon-architecture.md`](doc/daemon-architecture.md) for detailed IPC and protocol specifications.
 
 Since we created an admin peer, we can also add new peers and CIDRs from this peer via `innernet` instead of having to always run commands on the server.
 
@@ -253,7 +268,7 @@ cargo build --release --bin innernet-server
 
 The resulting binary will be located at `./target/release/innernet-server`
 
-### `innernet` Client CLI Build dependencies
+### `innernet` Client and Daemon (`innernetd`) Build dependencies
 
 - `rustc` / `cargo` (version 1.50.0 or higher)
 - `libclang` (see more info at [https://crates.io/crates/clang-sys](https://crates.io/crates/clang-sys))
@@ -261,10 +276,10 @@ The resulting binary will be located at `./target/release/innernet-server`
 Build:
 
 ```sh
-cargo build --release --bin innernet
+cargo build --release --bin innernet --bin innernetd
 ```
 
-The resulting binary will be located at `./target/release/innernet`
+The resulting binaries will be located at `./target/release/innernet` and `./target/release/innernetd`.
 
 ### Testing
 
