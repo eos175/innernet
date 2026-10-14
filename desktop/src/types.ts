@@ -27,4 +27,5 @@ export interface PeerDetail {
   rx_bytes: number;
   tx_bytes: number;
   is_connected: boolean;
+  is_self?: boolean;
 }

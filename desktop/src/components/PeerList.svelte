@@ -7,10 +7,11 @@
     searchQuery: string;
     isUp: boolean;
     copiedIp: string | null;
+    currentAddress?: string;
     onCopy: (ip: string) => void;
   }
 
-  let { peers, searchQuery, isUp, copiedIp, onCopy }: Props = $props();
+  let { peers, searchQuery, isUp, copiedIp, currentAddress, onCopy }: Props = $props();
 </script>
 
 <div class="flex-1 overflow-y-auto divide-y divide-slate-800/60 min-h-0 bg-slate-900">
@@ -26,7 +27,7 @@
     </div>
   {:else}
     {#each peers as peer (peer.ip)}
-      <PeerItem {peer} {copiedIp} {onCopy} />
+      <PeerItem {peer} {copiedIp} {currentAddress} {onCopy} />
     {/each}
   {/if}
 </div>

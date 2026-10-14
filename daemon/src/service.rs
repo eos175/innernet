@@ -217,8 +217,17 @@ impl DaemonService {
         let store = DataStore::open_or_create(&self.data_dir, &iface)
             .map_err(|e| anyhow!("Failed to open data store: {}", e))?;
 
+        let is_up = interface_is_up(self.backend, &iface);
+        let config = InterfaceConfig::from_interface(&self.config_dir, &iface).ok();
+        let my_ip = config.as_ref().map(|c| c.interface.address.addr());
+        let my_pubkey = config.as_ref().and_then(|c| {
+            wireguard_control::Key::from_base64(&c.interface.private_key)
+                .ok()
+                .map(|k| k.get_public().to_base64())
+        });
+
         let live_peers_map: HashMap<String, wireguard_control::PeerInfo> =
-            if interface_is_up(self.backend, &iface) {
+            if is_up {
                 Device::get(&iface, self.backend)
                     .map(|d| {
                         d.peers
@@ -240,8 +249,13 @@ impl DaemonService {
                 continue;
             }
 
+            let is_self = my_ip.map_or(false, |ip| ip == peer.ip)
+                || my_pubkey.as_deref().map_or(false, |k| k == peer.public_key);
+
             let live = live_peers_map.get(&peer.public_key);
-            let (last_handshake_time, is_connected, rx_bytes, tx_bytes) = if let Some(live) = live {
+            let (last_handshake_time, is_connected, rx_bytes, tx_bytes) = if is_self {
+                (None, is_up, 0, 0)
+            } else if let Some(live) = live {
                 let handshake_epoch = live.stats.last_handshake_time.and_then(|t| {
                     t.duration_since(UNIX_EPOCH).ok().map(|d| d.as_secs())
                 });
@@ -266,10 +280,11 @@ impl DaemonService {
                 rx_bytes,
                 tx_bytes,
                 is_connected,
+                is_self,
             });
         }
 
-        result.sort_by(|a, b| a.name.cmp(&b.name));
+        result.sort_by(|a, b| b.is_self.cmp(&a.is_self).then_with(|| a.name.cmp(&b.name)));
         Ok(result)
     }
 

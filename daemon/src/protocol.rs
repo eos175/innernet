@@ -67,6 +67,8 @@ pub struct PeerDetail {
     pub rx_bytes: u64,
     pub tx_bytes: u64,
     pub is_connected: bool,
+    #[serde(default)]
+    pub is_self: bool,
 }
 
 #[cfg(test)]

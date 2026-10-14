@@ -23,12 +23,21 @@
   // Derived filtered peer list
   let filteredPeers = $derived(
     peers.filter((peer) => {
+      const isSelf =
+        peer.is_self ||
+        Boolean(
+          status?.address &&
+            (peer.ip === status.address || status.address.startsWith(peer.ip))
+        );
+
       const matchesSearch =
         peer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         peer.ip.includes(searchQuery);
 
       if (!matchesSearch) return false;
-      if (filterType === "active") return peer.is_connected;
+      if (filterType === "active") {
+        return isSelf ? (status?.is_up ?? false) : peer.is_connected;
+      }
       if (filterType === "admin") return peer.is_admin;
       return true;
     })
@@ -111,7 +120,7 @@
   });
 </script>
 
-<main class="w-[400px] h-[580px] flex flex-col bg-slate-900 text-slate-100 border border-slate-800 rounded-lg shadow-2xl overflow-hidden font-sans">
+<main class="w-full h-screen flex flex-col bg-slate-900 text-slate-100 select-none overflow-hidden font-sans">
   <Header
     {networks}
     bind:selectedInterface
@@ -139,6 +148,7 @@
       {searchQuery}
       isUp={status?.is_up ?? false}
       {copiedIp}
+      currentAddress={status?.address}
       onCopy={handleCopy}
     />
   </section>
