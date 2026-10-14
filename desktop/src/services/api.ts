@@ -97,6 +97,10 @@ export async function invokeCommand<T>(
     return { success: true } as T;
   }
 
+  if (cmd === "ping_peer") {
+    return (Math.floor(Math.random() * 25) + 8) as T;
+  }
+
   return {} as T;
 }
 
@@ -128,5 +132,26 @@ export async function pickInviteFile(): Promise<string | null> {
     }
   }
   return null;
+}
+
+/**
+ * Ping a peer IP and return round-trip latency in milliseconds.
+ */
+export async function pingPeer(ip: string): Promise<number> {
+  return await invokeCommand<number>("ping_peer", { ip });
+}
+
+/**
+ * Listen for tray toggle connect event.
+ */
+export async function listenTrayToggleConnect(callback: () => void): Promise<() => void> {
+  if (isTauri) {
+    const { listen } = await import("@tauri-apps/api/event");
+    const unlisten = await listen("tray-toggle-connect", () => {
+      callback();
+    });
+    return unlisten;
+  }
+  return () => {};
 }
 

@@ -6,7 +6,7 @@ use std::fs;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, WindowEvent,
+    AppHandle, Emitter, Manager, WindowEvent,
 };
 
 #[tauri::command]
@@ -88,6 +88,33 @@ async fn hide_window(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn ping_peer(ip: String) -> Result<f64, String> {
+    use tokio::process::Command;
+    let output = Command::new("ping")
+        .args(["-c", "1", "-W", "2", &ip])
+        .output()
+        .await
+        .map_err(|e| format!("Failed to execute ping: {}", e))?;
+
+    if !output.status.success() {
+        return Err("Host unreachable or timed out".to_string());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    if let Some(pos) = stdout.find("time=") {
+        let after = &stdout[pos + 5..];
+        if let Some(end) = after.find(" ms") {
+            let num_str = after[..end].trim();
+            if let Ok(ms) = num_str.parse::<f64>() {
+                return Ok(ms);
+            }
+        }
+    }
+
+    Err("Could not parse ping latency".to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -95,9 +122,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            let connect_item = MenuItem::with_id(app, "toggle_connect", "Toggle Connection", true, None::<&str>)?;
             let toggle_item = MenuItem::with_id(app, "toggle", "Show/Hide innernet", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit innernet", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&toggle_item, &quit_item])?;
+            let menu = Menu::with_items(app, &[&connect_item, &toggle_item, &quit_item])?;
             let icon = tauri::include_image!("icons/32x32.png");
 
             let tray = TrayIconBuilder::with_id("main-tray")
@@ -106,6 +134,9 @@ pub fn run() {
                 .show_menu_on_left_click(false)
                 .tooltip("innernet")
                 .on_menu_event(|app, event| match event.id.as_ref() {
+                    "toggle_connect" => {
+                        let _ = app.emit("tray-toggle-connect", ());
+                    }
                     "toggle" => {
                         if let Some(window) = app.get_webview_window("main") {
                             let is_visible = window.is_visible().unwrap_or(false);
@@ -166,7 +197,8 @@ pub fn run() {
             fetch_sync,
             install_invite,
             read_invite_file,
-            hide_window
+            hide_window,
+            ping_peer
         ])
         .run(tauri::generate_context!())
         .expect("error while running innernet desktop application");

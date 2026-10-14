@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { NetworkSummary, InterfaceStatus, PeerDetail } from "./types";
-  import { invokeCommand, hideWindowToTray } from "./services/api";
+  import { invokeCommand, hideWindowToTray, listenTrayToggleConnect } from "./services/api";
   import Header from "./components/Header.svelte";
   import ConnectionCard from "./components/ConnectionCard.svelte";
   import PeerFilter from "./components/PeerFilter.svelte";
@@ -17,6 +17,7 @@
   let filterType = $state<"all" | "active" | "admin">("all");
   let isToggling = $state(false);
   let isRefreshing = $state(false);
+  let isDaemonConnected = $state(true);
   let copiedIp = $state<string | null>(null);
   let showImportModal = $state(false);
 
@@ -47,6 +48,7 @@
     try {
       const list = await invokeCommand<NetworkSummary[]>("get_networks");
       networks = list;
+      isDaemonConnected = true;
       if (!selectedInterface && list.length > 0) {
         selectedInterface = list[0].interface;
       }
@@ -55,6 +57,7 @@
       }
     } catch (e) {
       console.error("Failed to load networks:", e);
+      isDaemonConnected = false;
     }
   }
 
@@ -68,8 +71,10 @@
       ]);
       status = st;
       peers = pList;
+      isDaemonConnected = true;
     } catch (e) {
       console.error("Failed to refresh status:", e);
+      isDaemonConnected = false;
     } finally {
       isRefreshing = false;
     }
@@ -115,8 +120,25 @@
 
   onMount(() => {
     loadNetworks();
-    const interval = setInterval(refreshCurrentNetwork, 10000);
-    return () => clearInterval(interval);
+    let unlistenTray: (() => void) | undefined;
+    listenTrayToggleConnect(() => {
+      handleToggleConnection();
+    }).then((fn) => {
+      unlistenTray = fn;
+    });
+
+    const interval = setInterval(async () => {
+      if (!isDaemonConnected || networks.length === 0) {
+        await loadNetworks();
+      } else {
+        await refreshCurrentNetwork();
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      if (unlistenTray) unlistenTray();
+    };
   });
 </script>
 
@@ -130,6 +152,21 @@
     onRefresh={refreshCurrentNetwork}
     onHideToTray={hideWindowToTray}
   />
+
+  {#if !isDaemonConnected}
+    <div class="bg-amber-500/15 border-b border-amber-500/30 px-3 py-1.5 flex items-center justify-between text-xs text-amber-200 shrink-0">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+        <span class="truncate text-[11px]">innernet-daemon disconnected (waiting for daemon...)</span>
+      </div>
+      <button
+        onclick={() => loadNetworks()}
+        class="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[11px] font-medium transition shrink-0 ml-2"
+      >
+        Retry
+      </button>
+    </div>
+  {/if}
 
   <ConnectionCard
     {status}
